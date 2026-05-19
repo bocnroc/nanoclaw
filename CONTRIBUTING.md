@@ -93,6 +93,12 @@ Skills that run inside the agent container, not on the host. These teach the con
 - Use `allowed-tools` frontmatter to scope tool permissions
 - Keep them focused — the agent's context window is shared across all container skills
 
+**Practical guidance (lessons from real builds):**
+
+- **Ship a single CLI tool, not a multi-step SQL/HTTP recipe.** When a SKILL.md tells the agent "run these three commands in sequence, then parse the output," the agent will sometimes deviate — installing libraries it picks itself (e.g. `sql.js` instead of `bun:sqlite`), then hanging on incompatibilities. Skills that hold up under load expose **one executable** in the skill dir and have SKILL.md say "use only this command, do not install libraries." A `bun` script with subcommands that print JSON to stdout is a good shape — Bun is already in the container image and ships `bun:sqlite` built in.
+- **Share state with host services via a mounted file, not HTTP.** Agent containers route all outbound HTTP through the OneCLI credential gateway (the `onecli-gateway` container skill sets `HTTP_PROXY`/`HTTPS_PROXY` to `host.docker.internal:10255`). That intercepts *every* request, not just Anthropic API calls, so localhost-style URLs to sibling services on the same host won't behave the way you expect — and the host firewall typically blocks `docker0 → host:<port>` anyway. For state sharing, mount the file (SQLite is ideal) via the agent group's `additionalMounts` plus an allowlist entry in `~/.config/nanoclaw/mount-allowlist.json` (`allowReadWrite: true` if writes are needed). The mount lands under `/workspace/extra/<containerPath>`.
+- **Skill descriptions are keyword-matched.** The `description` frontmatter is what Claude Code uses to decide whether to invoke the skill. Vague descriptions get skipped on user phrasings that don't lexically overlap. List brand names, common phrasings, and exact verbs ("what's next", "log", "when did I last…") — be deliberately keyword-heavy.
+
 ### SKILL.md format
 
 All skills use the [Claude Code skills standard](https://code.claude.com/docs/en/skills):
