@@ -19,13 +19,15 @@ Show the current config to the user in a readable format: which directories are 
 
 Ask which directories the user wants agents to access. For each path:
 - Validate the path exists
-- Ask if it should be read-only for non-main agents (default: yes)
+- Ask whether the agent should be able to write to it (default: read-only)
 
 Build the JSON config and write it:
 
 ```bash
-npx tsx setup/index.ts --step mounts --force -- --json '{"allowedRoots":[{"path":"/path/to/dir","readOnly":false}],"blockedPatterns":[],"nonMainReadOnly":true}'
+npx tsx setup/index.ts --step mounts --force -- --json '{"allowedRoots":[{"path":"/path/to/dir","allowReadWrite":true}],"blockedPatterns":[]}'
 ```
+
+Omit `allowReadWrite` (or set it to `false`) to keep the mount read-only.
 
 Use `--force` to overwrite the existing config.
 
